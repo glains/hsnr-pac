@@ -12,7 +12,7 @@
 #define BATCH_SIZE 1000
 
 #ifndef DUT_T
-#define DUR_T duration<int, std::nano>
+#define DUR_T duration<long long int, std::nano>
 #endif
 
 using std::chrono::high_resolution_clock;
@@ -56,7 +56,7 @@ public:
 DUR_T vtriad_flps(int n) {
     int a[n];
 
-    DUR_T total{};
+    DUR_T total = high_resolution_clock::duration::zero();
     for (int i = 0; i < BATCH_SIZE; ++i) {
         VTriad t(n);
         t.fillRnd();
@@ -66,8 +66,6 @@ DUR_T vtriad_flps(int n) {
         t.triad(a);
 
         auto t2 = high_resolution_clock::now();
-
-        //auto ms_int = duration_cast<nanoseconds>(t2 - t1);
         total += t2 - t1;
     }
 

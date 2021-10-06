@@ -6,13 +6,13 @@
 
 // input size to iterate through
 #define N_FR 100
-#define N_TO 1000
+#define N_TO 10000
 #define N_STEP 100
 
-#define BATCH_SIZE 1000
+#define BATCH_SIZE 1
 
 #ifndef DUT_T
-#define DUR_T duration<int, std::nano>
+#define DUR_T duration<long long int, std::nano>
 #endif
 
 //-----------------------------------------------------------------------
@@ -60,6 +60,7 @@ void mat_mul_naive(const Mat &a, const Mat &b, Mat &c) {
 using std::chrono::high_resolution_clock;
 using std::chrono::duration_cast;
 using std::chrono::duration;
+using std::chrono::seconds;
 using std::chrono::nanoseconds;
 
 DUR_T mmul_flps(int n) {
@@ -67,7 +68,7 @@ DUR_T mmul_flps(int n) {
     Mat b(n);
     Mat c(n);
 
-    DUR_T total{};
+    DUR_T total = high_resolution_clock::duration::zero();
     for (int i = 0; i < BATCH_SIZE; ++i) {
         a.randomize();
         b.randomize();
@@ -77,8 +78,6 @@ DUR_T mmul_flps(int n) {
         mat_mul_naive(a, b, c);
 
         auto t2 = high_resolution_clock::now();
-
-        //auto ms_int = duration_cast<nanoseconds>(t2 - t1);
         total += t2 - t1;
     }
 
@@ -89,15 +88,17 @@ int main() {
     for (int n = N_FR; n < N_TO; n += N_STEP) {
         DUR_T d = mmul_flps(n);
 
-        int c = d.count();
-        double seconds = c / pow(10, 9);
-        std::cout << n << ": average " << seconds << " s/run" << std::endl;
-        if (seconds == 0) {
-            std::cout << n << ": nan, " << c << " nanos" << std::endl;
+        auto sec = duration_cast<seconds>(d);
+        auto sec_d = duration<double>(sec).count();
+
+        std::cout << n << ": average " << d.count() << "ns/run" << std::endl;
+        std::cout << n << ": average " << sec_d << "s/run" << std::endl;
+        if (sec_d == 0) {
+            std::cout << n << ": nan, " << sec_d << " nanos" << std::endl;
             continue;
         }
-        double flops = (2 * n / seconds) * pow(10, -6);
-        std::cout << n << ": " << (int) flops << " mflops" << std::endl;
+        double flops = (2.0 * n / sec_d);
+        std::cout << n << ": " << (int) flops << " flops" << std::endl;
     }
     return 0;
 }
