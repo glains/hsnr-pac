@@ -27,6 +27,10 @@ public:
         _v = new int[_size];
     }
 
+    [[nodiscard]] int &at(int row, int col) const {
+        return _v[row * _n + col];
+    }
+
     void randomize() const {
         std::random_device dev;
         std::mt19937 rng(dev());
@@ -55,6 +59,32 @@ void mat_mul_naive(const Mat &a, const Mat &b, Mat &c) {
     }
 }
 
+#define FAC_KB 64
+
+void mat_mul_tile(const Mat &a, const Mat &b, Mat &c) {
+    if ((a._n & (a._n - 1)) != 0) {
+        throw std::logic_error("size must be power of two: " + std::to_string(a._n));
+    }
+    int ts = (int) sqrt(FAC_KB);
+    int n = a._n; // assume n x n
+    for (int row = 0; row < n; row += ts) {
+        for (int col = 0; col < n; col += ts) {
+            for (int t = 0; t < n; t += ts) {
+
+                for (int i = row; i < std::min(row + ts, row); ++i) {
+                    for (int j = col; j < std::min(col + ts, col); ++j) {
+                        int sum = 0;
+                        for (int k = t; k < std::min(t + ts, t); ++k) {
+                            sum += a.at(i, k) * b.at(i, k);
+                        }
+                        c.at(i, j) += sum;
+                    }
+                }
+            }
+        }
+    }
+}
+
 //-----------------------------------------------------------------------
 
 using std::chrono::high_resolution_clock;
@@ -76,6 +106,7 @@ DUR_T mmul_flps(int n) {
         auto t1 = high_resolution_clock::now();
 
         mat_mul_naive(a, b, c);
+        //mat_mul_tile(a, b, c);
 
         auto t2 = high_resolution_clock::now();
         total += t2 - t1;
@@ -85,20 +116,22 @@ DUR_T mmul_flps(int n) {
 }
 
 int main() {
-    for (int n = N_FR; n < N_TO; n += N_STEP) {
-        DUR_T d = mmul_flps(n);
+    for (int n = 2; n < 16; ++n) {
+        int mat_size = (int) pow(2, n);
+        DUR_T d = mmul_flps(mat_size);
 
-        auto sec = duration_cast<seconds>(d);
-        auto sec_d = duration<double>(sec).count();
+        duration<double, std::ratio<1>> sec_d = d;
+        double sec = sec_d.count();
 
-        std::cout << n << ": average " << d.count() << "ns/run" << std::endl;
-        std::cout << n << ": average " << sec_d << "s/run" << std::endl;
-        if (sec_d == 0) {
-            std::cout << n << ": nan, " << sec_d << " nanos" << std::endl;
+        std::cout << mat_size << ": avg s/run: " << sec << std::endl;
+        if (sec == 0) {
+            std::cout << mat_size << ": nan, " << sec << " nanos" << std::endl;
             continue;
         }
-        double flops = (2.0 * n / sec_d);
-        std::cout << n << ": " << (int) flops << " flops" << std::endl;
+        int flops = (int) (2.0 * mat_size / sec);
+        double mflops = flops * pow(10, -6);
+        std::cout << mat_size << ": " << flops << " flops" << std::endl;
+        std::cout << mat_size << ": " << mflops << " mflops" << std::endl;
     }
     return 0;
 }
