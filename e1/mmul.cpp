@@ -3,13 +3,10 @@
 #include <random>
 #include <chrono>
 #include <iostream>
+#include <exception>
 
-// input size to iterate through
-#define N_FR 100
-#define N_TO 10000
-#define N_STEP 100
-
-#define BATCH_SIZE 1
+#define MAX_2EXP 12
+#define BATCH_SIZE 5
 
 #ifndef DUT_T
 #define DUR_T duration<long long int, std::nano>
@@ -116,7 +113,7 @@ DUR_T mmul_flps(int n) {
 }
 
 int main() {
-    for (int n = 2; n < 16; ++n) {
+    for (int n = 2; n < MAX_2EXP; ++n) {
         int mat_size = (int) pow(2, n);
         DUR_T d = mmul_flps(mat_size);
 
