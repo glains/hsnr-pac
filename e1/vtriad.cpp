@@ -4,12 +4,8 @@
 #include <chrono>
 #include <iostream>
 
-// should be at least 1000
-#define N_FR 10000
-#define N_TO 200000
-#define N_STEP 10000
-
-#define BATCH_SIZE 1000
+#define MAX_2EXP 12
+#define BATCH_SIZE 5
 
 #ifndef DUT_T
 #define DUR_T duration<long long int, std::nano>
@@ -72,18 +68,23 @@ DUR_T vtriad_flps(int n) {
     return total / BATCH_SIZE;
 }
 
-int main_2() {
-    for (int n = N_FR; n < N_TO; n += N_STEP) {
+int main() {
+    for (int n = 2; n < MAX_2EXP; ++n) {
+        int mat_size = (int) pow(2, n);
         DUR_T d = vtriad_flps(n);
 
-        int c = d.count();
-        double seconds = c / pow(10, 9);
-        if (seconds == 0) {
-            std::cout << n << ": nan, " << c << " nanos" << std::endl;
+        duration<double, std::ratio<1>> sec_d = d;
+        double sec = sec_d.count();
+
+        std::cout << mat_size << ": avg s/run: " << sec << std::endl;
+        if (sec == 0) {
+            std::cout << mat_size << ": nan, " << sec << " nanos" << std::endl;
             continue;
         }
-        double flops = (2 * n / seconds) * pow(10, -6);
-        std::cout << n << ": " << (int) flops << " mflops" << std::endl;
+        int flops = (int) (2.0 * mat_size / sec);
+        double mflops = flops * pow(10, -6);
+        std::cout << mat_size << ": " << flops << " flops" << std::endl;
+        std::cout << mat_size << ": " << mflops << " mflops" << std::endl;
     }
     return 0;
 }
