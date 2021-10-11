@@ -18,20 +18,20 @@ class Mat {
 public:
     const int _n;
     const int _size;
-    int *_v;
+    double *_v;
 
     explicit Mat(int n) : _n(n), _size(n * n) {
-        _v = new int[_size];
+        _v = new double[_size];
     }
 
-    [[nodiscard]] int &at(int row, int col) const {
+    [[nodiscard]] double &at(int row, int col) const {
         return _v[row * _n + col];
     }
 
     void randomize() const {
-        std::random_device dev;
-        std::mt19937 rng(dev());
-        std::uniform_int_distribution<std::mt19937::result_type> dist(1, 1000);
+        std::random_device rd;
+        std::default_random_engine rng(rd());
+        std::uniform_real_distribution<double> dist(1, 100);
         for (int i = 0; i < _size; ++i) {
             _v[i] = (int) dist(rng);
         }
@@ -125,7 +125,7 @@ int main() {
             std::cout << mat_size << ": nan, " << sec << " nanos" << std::endl;
             continue;
         }
-        int flops = (int) (2.0 * mat_size / sec);
+        double flops = (2.0 * mat_size / sec);
         double mflops = flops * pow(10, -6);
         std::cout << mat_size << ": " << flops << " flops" << std::endl;
         std::cout << mat_size << ": " << mflops << " mflops" << std::endl;
