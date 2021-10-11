@@ -102,8 +102,8 @@ DUR_T mmul_flps(int n) {
 
         auto t1 = high_resolution_clock::now();
 
-        mat_mul_naive(a, b, c);
-        //mat_mul_tile(a, b, c);
+        //mat_mul_naive(a, b, c);
+        mat_mul_tile(a, b, c);
 
         auto t2 = high_resolution_clock::now();
         total += t2 - t1;
