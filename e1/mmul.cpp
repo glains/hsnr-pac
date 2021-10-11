@@ -125,9 +125,8 @@ int main() {
             std::cout << mat_size << ": nan, " << sec << " nanos" << std::endl;
             continue;
         }
-        double flops = (2.0 * mat_size / sec);
+        double flops = 2.0 * pow(mat_size, 3) / sec;
         double mflops = flops * pow(10, -6);
-        std::cout << mat_size << ": " << flops << " flops" << std::endl;
         std::cout << mat_size << ": " << mflops << " mflops" << std::endl;
     }
     return 0;
