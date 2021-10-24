@@ -4,13 +4,10 @@
 #include <chrono>
 #include <iostream>
 #include <exception>
+#include <functional>
 
-#define MAX_2EXP 12
-#define BATCH_SIZE 5
-
-#ifndef DUT_T
-#define DUR_T duration<long long int, std::nano>
-#endif
+#define MAX_2EXP 10
+#define BATCH_SIZE 1
 
 //-----------------------------------------------------------------------
 
@@ -56,30 +53,39 @@ void mat_mul_naive(const Mat &a, const Mat &b, Mat &c) {
     }
 }
 
-#define FAC_KB 64
+void mat_mul_transpose(const Mat &a, const Mat &b, Mat &c) {
+    int n = a._n; // assume n x n
+    Mat tmp(n);
+    for (int row = 0; row < n; ++row)
+        for (int col = 0; col < n; ++col)
+            tmp.at(row, col) = b.at(col, row);
+
+    for (int row = 0; row < n; ++row)
+        for (int col = 0; col < n; ++col)
+            for (int k = 0; k < n; ++k)
+                c.at(row, col) += a.at(row, k) * tmp.at(col, k);
+}
+
+// define the size of tile based on the size of a cache line
+#ifndef CLS_KB
+#define CLS_KB (64 * 1000)
+#endif
+#define FAC_KB (int)(CLS_KB / sizeof(double))
 
 void mat_mul_tile(const Mat &a, const Mat &b, Mat &c) {
     if ((a._n & (a._n - 1)) != 0) {
         throw std::logic_error("size must be power of two: " + std::to_string(a._n));
     }
-    int ts = (int) sqrt(FAC_KB);
+    int ts = FAC_KB;
     int n = a._n; // assume n x n
-    for (int row = 0; row < n; row += ts) {
-        for (int col = 0; col < n; col += ts) {
-            for (int t = 0; t < n; t += ts) {
-
-                for (int i = row; i < std::min(row + ts, row); ++i) {
-                    for (int j = col; j < std::min(col + ts, col); ++j) {
-                        int sum = 0;
-                        for (int k = t; k < std::min(t + ts, t); ++k) {
-                            sum += a.at(i, k) * b.at(i, k);
-                        }
-                        c.at(i, j) += sum;
-                    }
-                }
-            }
-        }
-    }
+    for (int row = 0; row < n; row += ts)
+        for (int col = 0; col < n; col += ts)
+            for (int t = 0; t < n; t += ts)
+                // tile multiplication
+                for (int i = row; i < std::min(i + ts, n); ++i)
+                    for (int j = col; j < std::min(j + ts, n); ++j)
+                        for (int k = t; k < std::min(t + ts, n); ++k)
+                            c.at(i, j) += a.at(i, k) * b.at(i, k);
 }
 
 //-----------------------------------------------------------------------
@@ -90,44 +96,55 @@ using std::chrono::duration;
 using std::chrono::seconds;
 using std::chrono::nanoseconds;
 
-DUR_T mmul_flps(int n) {
+typedef duration<int64_t, std::milli> duration_t;
+
+template<typename MulOp>
+duration_t mmul_flps(int n, MulOp mulOp) {
     Mat a(n);
     Mat b(n);
     Mat c(n);
 
-    DUR_T total = high_resolution_clock::duration::zero();
+    auto elapsed = duration_t(0);
     for (int i = 0; i < BATCH_SIZE; ++i) {
         a.randomize();
         b.randomize();
 
         auto t1 = high_resolution_clock::now();
-
-        //mat_mul_naive(a, b, c);
-        mat_mul_tile(a, b, c);
-
+        mulOp(a, b, c);
         auto t2 = high_resolution_clock::now();
-        total += t2 - t1;
+        elapsed += duration_cast<std::chrono::milliseconds>(t2 - t1);
+    }
+    return elapsed / BATCH_SIZE;
+}
+
+template<typename MulOp>
+void mmul_exec(const std::string &name, MulOp mulOp) {
+    std::cout << "benchmarking " << name << std::endl;
+
+    for (int n = 6; n < MAX_2EXP; ++n) {
+        int mat_size = (int) pow(2, n);
+        duration_t elapsed = mmul_flps(mat_size, mulOp);
+
+        duration<double, std::ratio<1>> selapsed = elapsed;
+        double sec = selapsed.count();
+
+        if (sec == 0) {
+            std::cout << mat_size << ": nan" << std::endl;
+            continue;
+        }
+
+        // std::cout << mat_size << ": avg s/run: " << sec << std::endl;
+        double flops = (2 * pow(mat_size, 3)) / sec;
+        // std::cout << mat_size << ": " << flops << " flops" << std::endl;
+        // std::cout << mat_size << ": " << flops * pow(10, -6) << " mflops" << std::endl;
+        std::cout << mat_size << ": " << flops / pow(10, 9) << " gflops" << std::endl;
     }
 
-    return total / BATCH_SIZE;
 }
 
 int main() {
-    for (int n = 2; n < MAX_2EXP; ++n) {
-        int mat_size = (int) pow(2, n);
-        DUR_T d = mmul_flps(mat_size);
-
-        duration<double, std::ratio<1>> sec_d = d;
-        double sec = sec_d.count();
-
-        std::cout << mat_size << ": avg s/run: " << sec << std::endl;
-        if (sec == 0) {
-            std::cout << mat_size << ": nan, " << sec << " nanos" << std::endl;
-            continue;
-        }
-        double flops = 2.0 * pow(mat_size, 3) / sec;
-        double mflops = flops * pow(10, -6);
-        std::cout << mat_size << ": " << mflops << " mflops" << std::endl;
-    }
+    mmul_exec("naive", mat_mul_naive);
+    mmul_exec("transpose", mat_mul_transpose);
+    mmul_exec("tile", mat_mul_tile);
     return 0;
 }
