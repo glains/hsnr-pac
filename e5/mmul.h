@@ -17,6 +17,10 @@ public:
 
     void randomize();
 
+    void sendSync();
+
+    void recvSync();
+
     virtual ~Vec() {
         delete[] _v;
     }
@@ -24,6 +28,11 @@ public:
 private:
     const int _n;
     double *_v;
+};
+
+enum Role {
+    SND,
+    RCV
 };
 
 enum Strategy {
@@ -46,6 +55,10 @@ public:
     Vec mul(const Vec &vec, Strategy s) const;
 
     void randomize();
+
+    void sendSync();
+
+    void recvSync();
 
     virtual ~Mat() {
         delete[] _v;
