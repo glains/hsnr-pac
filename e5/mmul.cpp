@@ -2,10 +2,9 @@
 
 #include <random>
 #include <stdexcept>
-#include "omp.h"
 #include <iostream>
+#include <sstream>
 #include <mpi.h>
-#include <armadillo>
 
 using namespace std;
 
