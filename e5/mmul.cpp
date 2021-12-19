@@ -118,10 +118,23 @@ void Mat::mulByRow(const Vec &vec, const Vec &res) const {
 
 void Mat::mulByCol(const Vec &vec, const Vec &res) const {
     cout << "rank " << MPI_rank() << ": strategy col" << endl;
+    int flag;
+    int rank = MPI_rank();
+    int size = MPI_size();
 
-    MPI_Datatype col_type;
-    MPI_Type_vector(3, 1, 3, MPI_INT, &col_type);
-    MPI_Type_commit(&col_type);
+    int blkSize = _cols / size;
+
+    // TODO: is a local copy needed for reduce?
+    Vec local(res.size());
+
+    int from = rank * blkSize;
+    for (int row = 0; row < _rows; ++row) {
+        for (int col = from; col < from + blkSize; ++col) {
+            local.at(col) += at(row, col) * vec.at(col);
+        }
+    }
+
+    MPI::COMM_WORLD.Reduce(local.begin(), res.begin(), res.size(), MPI_DOUBLE, MPI_SUM, rank);
 }
 
 void Mat::mulByBlk(const Vec &vec, const Vec &res) const {
