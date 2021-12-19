@@ -13,25 +13,21 @@ bool rankZero() {
 }
 
 void mmul(int m, int n) {
-    if (rankZero()) {
-        Mat mat(m, n);
-        mat.randomize();
-        mat.sendSync();
+    Vec v(n);
+    Mat mat(m, n);
 
-        Vec v(n);
+    if (rankZero()) {
         v.randomize();
         v.sendSync();
-
-        Vec r = mat.mul(v, ROW);
+        mat.randomize();
+        mat.sendSync();
     } else {
-        Mat mat(m, n);
-        mat.recvSync();
-
-        Vec v(n);
         v.recvSync();
-
-        Vec r = mat.mul(v, ROW);
+        mat.recvSync();
     }
+
+    MPI::COMM_WORLD.Barrier();
+    Vec r = mat.mul(v, ROW);
 }
 
 const int PO2_FR = 8;
