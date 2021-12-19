@@ -15,10 +15,6 @@ inline int MPI_rank() {
     return MPI::COMM_WORLD.Get_rank();
 }
 
-inline int MPI_rank_zero() {
-    return MPI::COMM_WORLD.Get_rank() == 0;
-}
-
 inline int MPI_size() {
     return MPI::COMM_WORLD.Get_size();
 }

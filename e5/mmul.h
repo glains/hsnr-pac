@@ -31,11 +31,6 @@ private:
     double *_v;
 };
 
-enum Role {
-    SND,
-    RCV
-};
-
 enum Strategy {
     ROW,
     COL,
