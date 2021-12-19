@@ -15,6 +15,9 @@ public:
     [[nodiscard]]
     double &at(int idx) const;
 
+    [[nodiscard]]
+    double *begin() const;
+
     void randomize();
 
     void sendSync();
@@ -26,7 +29,7 @@ public:
     }
 
 private:
-    const int _n;
+    int _n;
     double *_v;
 };
 
@@ -78,6 +81,7 @@ private:
 
     [[nodiscard]]
     Vec mulByBlk(const Vec &vec) const;
+
 };
 
 #endif //HSNR_PAC_E5_MMUL_H

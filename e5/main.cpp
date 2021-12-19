@@ -40,10 +40,7 @@ const int PO2_TO = 12;
 int main(int argc, char **argv) {
     int flag;
 
-    flag = MPI::Init();
-    if (flag != MPI::MPI_SUCCESS) {
-        throw std::invalid_argument("mpi: cannot init");
-    }
+    MPI::Init();
     // TODO: validate if all participants are present
 
     for (int i = PO2_FR; i < PO2_TO; ++i) {
