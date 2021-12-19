@@ -1,23 +1,26 @@
 #include "mmul.h"
 
 #include <random>
-#include <stdexcept>
-#include <iostream>
 #include <mpi.h>
 
 using namespace std;
 
+const int PO2_FR = 4;
+const int PO2_TO = 5;
+
 #define ROOT 0
 
-bool rankZero() {
+//-----------------------------------------------------------------------
+
+bool isRoot() {
     return MPI::COMM_WORLD.Get_rank() == ROOT;
 }
 
-void mmul(int m, int n) {
+void mmul(int m, int n, Strategy s) {
     Vec v(n);
     Mat mat(m, n);
 
-    if (rankZero()) {
+    if (isRoot()) {
         v.randomize();
         mat.randomize();
     }
@@ -25,24 +28,29 @@ void mmul(int m, int n) {
     mat.bcast(ROOT);
 
     MPI::COMM_WORLD.Barrier();
-    Vec r = mat.mul(v, ROW);
+    Vec r = mat.mul(v, s);
 }
 
-const int PO2_FR = 4;
-const int PO2_TO = 5;
-
-int main(int argc, char **argv) {
-    int flag;
-
-    MPI::Init();
-    // TODO: validate if all participants are present
-
+void mmul(Strategy strat) {
     for (int i = PO2_FR; i < PO2_TO; ++i) {
         int s = (int) pow(2, i);    // matrix size nxn
         int m = s, n = s;           // matrix size mxn
 
-        mmul(m, n);
+        mmul(m, n, strat);
     }
+}
+
+//-----------------------------------------------------------------------
+
+int main([[maybe_unused]] int argc,
+         [[maybe_unused]] char **argv) {
+
+    MPI::Init();
+    // TODO: validate if all participants are present
+
+    mmul(ROW);
+    mmul(COL);
+    mmul(BLK);
 
     MPI::Finalize();
 }
