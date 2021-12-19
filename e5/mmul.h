@@ -69,14 +69,11 @@ private:
     const int _size;
     double *_v;
 
-    [[nodiscard]]
-    Vec mulByRow(const Vec &vec) const;
+    void mulByRow(const Vec &vec, const Vec &res) const;
 
-    [[nodiscard]]
-    Vec mulByCol(const Vec &vec) const;
+    void mulByCol(const Vec &vec, const Vec &res) const;
 
-    [[nodiscard]]
-    Vec mulByBlk(const Vec &vec) const;
+    void mulByBlk(const Vec &vec, const Vec &res) const;
 
 };
 

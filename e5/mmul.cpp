@@ -71,15 +71,15 @@ Vec Mat::mul(const Vec &vec, Strategy s) const {
     Vec res(_cols);
     switch (s) {
         case ROW: {
-            res = mulByRow(vec);
+            mulByRow(vec, res);
             break;
         }
         case COL: {
-            res = mulByCol(vec);
+            mulByCol(vec, res);
             break;
         }
         case BLK: {
-            res = mulByBlk(vec);
+            mulByBlk(vec, res);
             break;
         }
     }
@@ -87,17 +87,17 @@ Vec Mat::mul(const Vec &vec, Strategy s) const {
     return res;
 }
 
-Vec Mat::mulByRow(const Vec &vec) const {
+void Mat::mulByRow(const Vec &vec, const Vec &res) const {
     cout << "rank " << MPI_rank() << ": strategy row" << endl;
     int flag;
     int rank = MPI_rank();
     int size = MPI_size();
 
-    Vec res(_cols);
-
     int blks = _rows / size;
+    int blkSize = blks * _cols;
+
     int from = rank * blks;
-    int to = from + blks;
+    int to = from + blks * _cols;
     for (int row = from; row < to; ++row) {
         for (int col = 0; col < _cols; ++col) {
             res.at(col) += at(row, col) * vec.at(col);
@@ -109,39 +109,33 @@ Vec Mat::mulByRow(const Vec &vec) const {
     checkSuccess(flag, "mpi: bcast result");
 
     // before current
-    for (int row = 0; row < from; ++row) {
-        double *rem_off = res.begin() + (blks * row);
-        flag = MPI_Bcast(rem_off, _cols, MPI_DOUBLE, rank, MPI_COMM_WORLD);
+    for (int rnk = 0; rnk < rank; ++rnk) {
+        double *rem_off = res.begin() + (rnk * blkSize);
+        flag = MPI_Bcast(rem_off, blkSize, MPI_DOUBLE, rank, MPI_COMM_WORLD);
         checkSuccess(flag, "mpi: bcast fetch before");
     }
     // after current
-    for (int row = to + 1; row < _rows; ++row) {
-        double *rem_off = res.begin() + (blks * row);
-        flag = MPI_Bcast(rem_off, _cols, MPI_DOUBLE, rank, MPI_COMM_WORLD);
-        checkSuccess(flag, "mpi: bcast fetch after");
+    for (int rnk = rank + 1; rnk < size; ++rnk) {
+        double *rem_off = res.begin() + (rnk * blkSize);
+        flag = MPI_Bcast(rem_off, blkSize, MPI_DOUBLE, rank, MPI_COMM_WORLD);
+        checkSuccess(flag, "mpi: bcast fetch before");
     }
-
-    return res;
 }
 
-Vec Mat::mulByCol(const Vec &vec) const {
+void Mat::mulByCol(const Vec &vec, const Vec &res) const {
     cout << "rank " << MPI_rank() << ": strategy col" << endl;
 
     MPI_Datatype col_type;
     MPI_Type_vector(3, 1, 3, MPI_INT, &col_type);
     MPI_Type_commit(&col_type);
-
-    return Vec(0);
 }
 
-Vec Mat::mulByBlk(const Vec &vec) const {
+void Mat::mulByBlk(const Vec &vec, const Vec &res) const {
     cout << "rank " << MPI_rank() << ": strategy blk" << endl;
 
     MPI_Datatype row_type;
     MPI_Type_vector(1, _cols, _cols, MPI_DOUBLE, &row_type);
     MPI_Type_commit(&row_type);
-
-    return Vec(0);
 }
 
 void Mat::randomize() {
