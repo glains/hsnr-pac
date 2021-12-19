@@ -47,12 +47,10 @@ void Vec::randomize() {
     }
 }
 
-void Vec::sendSync() {
-    cout << "send vector size: " << _n << endl;
-}
-
-void Vec::recvSync() {
-    cout << "recv vector size: " << _n << endl;
+void Vec::bcast(int root) {
+    cout << "rank " << MPI_rank() << ": send vec size: " << _n << endl;
+    int flag = MPI_Bcast(_v, _n, MPI_DOUBLE, root, MPI_COMM_WORLD);
+    checkSuccess(flag, "mpi: send values");
 }
 
 double *Vec::begin() const {
@@ -155,14 +153,8 @@ void Mat::randomize() {
     }
 }
 
-void Mat::sendSync() {
+void Mat::bcast(int root) {
     cout << "rank " << MPI_rank() << ": send mat size: " << _rows << "x" << _cols << endl;
-    int flag = MPI_Bcast(_v, _size, MPI_DOUBLE, 0, MPI_COMM_WORLD);
+    int flag = MPI_Bcast(_v, _size, MPI_DOUBLE, root, MPI_COMM_WORLD);
     checkSuccess(flag, "mpi: send values");
-}
-
-void Mat::recvSync() {
-    cout << "rank " << MPI_rank() << ": recv mat size: " << _rows << "x" << _cols << endl;
-    int flag = MPI_Bcast(_v, _size, MPI_DOUBLE, 0, MPI_COMM_WORLD);
-    checkSuccess(flag, "mpi: recv values");
 }

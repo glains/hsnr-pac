@@ -7,9 +7,10 @@
 
 using namespace std;
 
+#define ROOT 0
 
 bool rankZero() {
-    return MPI::COMM_WORLD.Get_rank() == 0;
+    return MPI::COMM_WORLD.Get_rank() == ROOT;
 }
 
 void mmul(int m, int n) {
@@ -18,20 +19,17 @@ void mmul(int m, int n) {
 
     if (rankZero()) {
         v.randomize();
-        v.sendSync();
         mat.randomize();
-        mat.sendSync();
-    } else {
-        v.recvSync();
-        mat.recvSync();
     }
+    v.bcast(ROOT);
+    mat.bcast(ROOT);
 
     MPI::COMM_WORLD.Barrier();
     Vec r = mat.mul(v, ROW);
 }
 
-const int PO2_FR = 8;
-const int PO2_TO = 12;
+const int PO2_FR = 4;
+const int PO2_TO = 5;
 
 int main(int argc, char **argv) {
     int flag;

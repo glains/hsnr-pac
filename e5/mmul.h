@@ -20,9 +20,7 @@ public:
 
     void randomize();
 
-    void sendSync();
-
-    void recvSync();
+    void bcast(int root);
 
     virtual ~Vec() {
         delete[] _v;
@@ -59,9 +57,7 @@ public:
 
     void randomize();
 
-    void sendSync();
-
-    void recvSync();
+    void bcast(int root);
 
     virtual ~Mat() {
         delete[] _v;
