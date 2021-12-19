@@ -5,8 +5,8 @@
 
 using namespace std;
 
-const int PO2_FR = 4;
-const int PO2_TO = 5;
+const int PO2_FR = 10;
+const int PO2_TO = 14;
 
 #define ROOT 0
 

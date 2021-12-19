@@ -89,12 +89,10 @@ void Mat::mulByRow(const Vec &vec, const Vec &res) const {
     int rank = MPI_rank();
     int size = MPI_size();
 
-    int blks = _rows / size;
-    int blkSize = blks * _cols;
+    int blkSize = _rows / size;
 
-    int from = rank * blks;
-    int to = from + blks * _cols;
-    for (int row = from; row < to; ++row) {
+    int from = rank * blkSize;
+    for (int row = from; row < from + blkSize; ++row) {
         for (int col = 0; col < _cols; ++col) {
             res.at(col) += at(row, col) * vec.at(col);
         }
@@ -128,6 +126,8 @@ void Mat::mulByCol(const Vec &vec, const Vec &res) const {
 
 void Mat::mulByBlk(const Vec &vec, const Vec &res) const {
     cout << "rank " << MPI_rank() << ": strategy blk" << endl;
+
+    cout << "WARN: blk not implemented" << endl;
 
     MPI_Datatype row_type;
     MPI_Type_vector(1, _cols, _cols, MPI_DOUBLE, &row_type);
