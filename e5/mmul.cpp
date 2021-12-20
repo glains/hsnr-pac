@@ -66,21 +66,32 @@ Vec Mat::mul(const Vec &vec, Strategy s) const {
     }
     Vec res(_cols);
     switch (s) {
-        case ROW: {
+        case LOCAL:
+            mulLocal(vec, res);
+            break;
+        case MPI_ROW: {
             mulByRow(vec, res);
             break;
         }
-        case COL: {
+        case MPI_COL: {
             mulByCol(vec, res);
             break;
         }
-        case BLK: {
+        case MPI_BLK: {
             mulByBlk(vec, res);
             break;
         }
     }
     cout << "rank " << MPI_rank() << ": mul done" << endl;
     return res;
+}
+
+void Mat::mulLocal(const Vec &vec, const Vec &res) const {
+    for (int row = 0; row < _rows; ++row) {
+        for (int col = 0; col < _cols; ++col) {
+            res.at(col) += at(row, col) * vec.at(col);
+        }
+    }
 }
 
 void Mat::mulByRow(const Vec &vec, const Vec &res) const {

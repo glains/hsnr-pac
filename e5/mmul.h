@@ -32,9 +32,10 @@ private:
 };
 
 enum Strategy {
-    ROW,
-    COL,
-    BLK
+    LOCAL,
+    MPI_ROW,
+    MPI_COL,
+    MPI_BLK
 };
 
 class Mat {
@@ -63,6 +64,8 @@ private:
     const int _cols;
     const int _size;
     double *_v;
+
+    void mulLocal(const Vec &vec, const Vec &res) const;
 
     void mulByRow(const Vec &vec, const Vec &res) const;
 

@@ -41,9 +41,10 @@ void mmul(int m, int n, Strategy s) {
 }
 
 void mmul(Strategy strat) {
+    cout << "using strategy: " << strat << endl << endl;
     for (int i = PO2_FR; i < PO2_TO; ++i) {
-        int s = (int) pow(2, i);    // matrix size nxn
-        int m = s, n = s;           // matrix size mxn
+        int s = (int) pow(2, i);
+        int m = s, n = s; // mat size nxn
 
         mmul(m, n, strat);
     }
@@ -56,9 +57,10 @@ int main([[maybe_unused]] int argc,
 
     MPI::Init();
 
-    mmul(ROW);
-    mmul(COL);
-    mmul(BLK);
+    mmul(LOCAL);
+    mmul(MPI_ROW);
+    mmul(MPI_COL);
+    mmul(MPI_BLK);
 
     MPI::Finalize();
 }
