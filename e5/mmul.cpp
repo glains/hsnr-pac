@@ -129,7 +129,6 @@ void Mat::mulByRow(const Vec &vec, const Vec &res) const {
 
 void Mat::mulByCol(const Vec &vec, const Vec &res) const {
     cout << "rank " << MPI_rank() << ": strategy col" << endl;
-    int flag;
     int rank = MPI_rank();
     int size = MPI_size();
 
