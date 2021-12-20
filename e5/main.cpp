@@ -2,6 +2,7 @@
 
 #include <random>
 #include <mpi.h>
+#include <iomanip>
 
 using namespace std;
 
@@ -27,8 +28,16 @@ void mmul(int m, int n, Strategy s) {
     v.bcast(ROOT);
     mat.bcast(ROOT);
 
+    double t1 = MPI_Wtime();
     MPI::COMM_WORLD.Barrier();
     Vec r = mat.mul(v, s);
+    MPI::COMM_WORLD.Barrier();
+    double t2 = MPI_Wtime();
+
+    double delta = t2 - t1;
+    if (isRoot()) {
+        cout << std::setprecision(0) << "rank 0: took " << delta << " sec." << endl << endl;
+    }
 }
 
 void mmul(Strategy strat) {
@@ -46,7 +55,6 @@ int main([[maybe_unused]] int argc,
          [[maybe_unused]] char **argv) {
 
     MPI::Init();
-    // TODO: validate if all participants are present
 
     mmul(ROW);
     mmul(COL);
